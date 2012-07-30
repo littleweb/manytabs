@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<title>ManyTabs</title>
+<hta:application id="deskGo" 
+    applicationname="ManyTabs" 
+	showintaskbar="yes" 
+    icon="ui/icon.ico"
+	contextMenu="no"
+    singleinstance="yes"
+    windowstate="maximize"
+/>
+</head>
+<style type="text/css">
+html,body{
+	width: 100%;height: 100%;
+}
+*{
+	margin: 0;padding: 0;
+}
+
+.Modle-fso .tools-bar{
+	height: 28px;
+	line-height: 28px;
+	background: orange;
+}
+.Modle-fso .tools-bar{
+	text-indent: 1em;
+	font-size: 12px;
+}
+.Modle-fso .tools-bar .btn{
+	width: 18px;height: 18px;margin: 0 5px;
+	border: 1px solid gray;
+	font-family: "宋体";
+}
+
+/* demo版块 */
+.Widget-demo{
+	width: 32%;height: 300px;margin: 0.5%;
+	float: left;
+}
+.Widget-demo .inner{
+	height: 298px;
+	overflow: hidden;
+	border: 1px solid gray;
+}
+.Widget-demo .Modle-fso{
+	height: 298px;
+	overflow: hidden;
+}
+</style>
+<body>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoPm" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoUe" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoDev" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoUml" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoDemo" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoQa" class="Modle-fso"></div>
+		</div>
+	</div>
+	<div class="Widget-demo">
+		<div class="inner">
+			<div id="FsoData" class="Modle-fso"></div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+var Q = function(id){return document.getElementById(id);}
+
+//获取本程序路径
+function GetAppPath(){
+	var appPath=document.location.toString().replace("file:///","").replace(/\//g,"\\").replace(/%20/g," ");
+	appPath=appPath.split("\\");
+	appPath.pop();
+	appPath=appPath.join("\\").toString();
+	return appPath + "\\";
+}
+//GUID生成器
+function Guid(){
+    var guid = "";
+    for (var i = 1; i <= 32; i++){
+      var n = Math.floor(Math.random()*16.0).toString(16);
+      guid +=   n;
+      if((i==8)||(i==12)||(i==16)||(i==20))
+        guid += "_";
+    }
+    return guid;    
+}
+function FsoControl(vo){
+	this.options = {
+		Guid : Guid(),
+		el       : '',
+		fso      : '',
+		path     : '',
+		pathLine : ''
+	},
+	this.init = function(vo){
+		this.options.el    = vo.el;
+		this.options.path  = vo.path;
+		this.options.title = vo.title;
+		this.createFso();
+	},
+	this.init(vo);
+}
+FsoControl.prototype = {
+	//创建fso
+	createFso : function(){
+		var me = this;
+		var _fsoTpl = [
+			'<div id="UiFso-<{Guid}>" class="Modle-fso">',
+			'	<div class="tools-bar">',
+			'		<{title}>',
+			'		<input id="goBack-<{Guid}>" class="btn" value="<-" type="button"',
+			'	</div>',
+			'	<div id="FsoBox-<{Guid}>" class="fso-box">',
+			'		<object id="Fso-<{Guid}>" class="fso" classid="CLSID:8856F961-340A-11D0-A96B-00C04FD705A2">',
+			'			<param name="Location" value="<{path}>">',
+			'		</object>',
+			'	</div>',
+			'</div>'
+		].join("");
+		me.options.el.innerHTML = _fsoTpl.replace(/<{Guid}>/g,me.options.Guid).replace("<{path}>",me.options.path).replace("<{title}>",me.options.title);
+		var _thisUiFso = Q("UiFso-" + me.options.Guid);
+		var _thisFsoBox = Q("FsoBox-" + me.options.Guid);
+		var _thisFso = me.options.fso = Q("Fso-" + me.options.Guid);
+		var OS=(navigator.userAgent.indexOf("7") > -1)?"windows7":"windowsxp";
+		//alert(me.options.el.innerHTML);
+		_thisUiFso.style.width = me.options.el.offsetWidth + "px";
+		_thisUiFso.style.height = me.options.el.offsetHeight + "px";		
+		_thisFsoBox.style.width = me.options.el.offsetWidth + "px";
+		_thisFsoBox.style.height = me.options.el.offsetHeight + "px";	
+		_thisFsoBox.style.overflow = "hidden";		
+		_thisFso.style.width = me.options.el.offsetWidth-10 + "px";
+		_thisFso.style.marginTop = ((OS=="windows7")?-25:0) + "px";
+		_thisFso.style.height = me.options.el.offsetHeight + "px";
+		_thisFso.attachEvent("DocumentComplete", function(){
+			me.options.pathLine = _thisFso.LocationUrl;
+			_thisFso.Document.CurrentViewMode="6";
+		});
+		me.bind();
+	},
+	bind:function(){
+		var me = this;
+		Q("goBack-" + this.options.Guid).onclick=function(){
+			//me.options.fso.goBack();
+			me.goBack();
+		}
+	},
+	goBack : function(){
+		var _U=this.options.pathLine.replace("file:///","").replace(/\//g,"\\");
+		if(_U == this.options.path){
+			alert("已到极限目录");
+		}else{
+			//_U = _U.split("\\");
+			//_U=_U.slice(0,_U.length-1).join("\\");
+			//this.options.fso.Navigate(_U);
+			this.options.fso.goBack();
+		};
+	}
+}
+
+new FsoControl({
+	el    : Q("FsoPm"),
+	title : "产品资料",
+	path  : GetAppPath() + "产品资料"
+});
+new FsoControl({
+	el    : Q("FsoUe"),
+	title : "UI设计图",
+	path  : GetAppPath() + "UI设计图"
+});
+new FsoControl({
+	el    : Q("FsoUml"),
+	title : "工程设计资料",
+	path  : GetAppPath() + "工程设计资料"
+});
+new FsoControl({
+	el    : Q("FsoDev"),
+	title : "编码开发",
+	path  : GetAppPath() + "编码开发"
+});
+new FsoControl({
+	el    : Q("FsoDemo"),
+	title : "DEMO",
+	path  : GetAppPath() + "DEMO"
+});
+new FsoControl({
+	el    : Q("FsoQa"),
+	title : "测试",
+	path  : GetAppPath() + "测试"
+});
+new FsoControl({
+	el    : Q("FsoData"),
+	title : "数据",
+	path  : GetAppPath() + "数据"
+});
+</script>
+</body>
+</html>
